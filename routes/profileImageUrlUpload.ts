@@ -27,11 +27,16 @@ module.exports = function profileImageUrlUpload () {
         ];
         
         if (!allowedProtocols.includes(parsedUrl.protocol)) {
-          return next(new Error('Invalid URL protocol'));
+          return next(new Error('Invalid URL protocol. Only HTTP and HTTPS are allowed.'));
         }
         
         if (!allowedDomains.some(domain => parsedUrl.hostname.endsWith(domain))) {
           return next(new Error('Domain not allowed'));
+        }
+
+        // Check if URL matches expected pattern for image files
+        if (!req.body.imageUrl.match(/\.(jpg|jpeg|png|svg|gif)$/i)) {
+          return next(new Error('Invalid file type. Only jpg, jpeg, png, svg, and gif files are allowed.'));
         }
 
         validatedUrl = parsedUrl.toString();
@@ -43,7 +48,6 @@ module.exports = function profileImageUrlUpload () {
       } catch (err) {
         return next(new Error('Invalid URL format'));
       }
-
       const loggedInUser = security.authenticatedUsers.get(req.cookies.token)
       if (loggedInUser) {
         const imageRequest = request
