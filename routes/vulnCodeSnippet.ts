@@ -4,6 +4,7 @@
  */
 
 import { type NextFunction, type Request, type Response } from 'express'
+import path from 'path'
 import fs from 'fs'
 import yaml from 'js-yaml'
 import { getCodeChallenges } from '../lib/codingChallenges'
@@ -90,8 +91,15 @@ exports.checkVulnLines = () => async (req: Request<Record<string, unknown>, Reco
   const selectedLines: number[] = req.body.selectedLines
   const verdict = getVerdict(vulnLines, neutralLines, selectedLines)
   let hint
-  if (fs.existsSync('./data/static/codefixes/' + key + '.info.yml')) {
-    const codingChallengeInfos = yaml.load(fs.readFileSync('./data/static/codefixes/' + key + '.info.yml', 'utf8'))
+  const safePath = path.join('data', 'static', 'codefixes', key + '.info.yml')
+  // Ensure the path doesn't escape the intended directory
+  const normalizedPath = path.normalize(safePath)
+  if (!normalizedPath.startsWith('data/static/codefixes/')) {
+    res.status(400).json({ status: 'error', error: 'Invalid challenge key' })
+    return
+  }
+  if (fs.existsSync(normalizedPath)) {
+    const codingChallengeInfos = yaml.load(fs.readFileSync(normalizedPath, 'utf8'))
     if (codingChallengeInfos?.hints) {
       if (accuracy.getFindItAttempts(key) > codingChallengeInfos.hints.length) {
         if (vulnLines.length === 1) {
