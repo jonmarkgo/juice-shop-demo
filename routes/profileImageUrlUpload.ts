@@ -16,6 +16,20 @@ module.exports = function profileImageUrlUpload () {
   return (req: Request, res: Response, next: NextFunction) => {
     if (req.body.imageUrl !== undefined) {
       const url = req.body.imageUrl
+      // Validate URL protocol and domain
+      try {
+        const parsedUrl = new URL(url)
+        if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+          return next(new Error('Invalid URL protocol. Only HTTP and HTTPS are allowed.'))
+        }
+        // Check if URL matches expected pattern for image files
+        if (!url.match(/\.(jpg|jpeg|png|svg|gif)$/i)) {
+          return next(new Error('Invalid file type. Only jpg, jpeg, png, svg, and gif files are allowed.'))
+        }
+      } catch (e) {
+        return next(new Error('Invalid URL format'))
+      }
+      
       if (url.match(/(.)*solve\/challenges\/server-side(.)*/) !== null) req.app.locals.abused_ssrf_bug = true
       const loggedInUser = security.authenticatedUsers.get(req.cookies.token)
       if (loggedInUser) {
