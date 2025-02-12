@@ -31,5 +31,6 @@ module.exports = function performRedirect () {
     } else {
       res.status(403)
       next(new Error('Unauthorized redirect URL'))
+    }
   }
 }
