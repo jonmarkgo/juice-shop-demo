@@ -19,7 +19,7 @@ export = function performRedirect () {
     
     // Only allow exact matches from the allowlist
     const allowlist = security.redirectAllowlist
-    if (Array.from(allowlist).includes(toUrl)) {
+    if ([...allowlist].includes(toUrl)) {
       // Keep the crypto challenge functionality
       challengeUtils.solveIf(challenges.redirectCryptoCurrencyChallenge, () => { 
         return toUrl === 'https://explorer.dash.org/address/Xr556RzuwX6hg5EGpkybbv5RanJoZN17kW' || 
