@@ -91,15 +91,19 @@ exports.checkVulnLines = () => async (req: Request<Record<string, unknown>, Reco
   const selectedLines: number[] = req.body.selectedLines
   const verdict = getVerdict(vulnLines, neutralLines, selectedLines)
   let hint
-  const safePath = path.join('data', 'static', 'codefixes', key + '.info.yml')
-  // Ensure the path doesn't escape the intended directory
-  const normalizedPath = path.normalize(safePath)
-  if (!normalizedPath.startsWith('data/static/codefixes/')) {
-    res.status(400).json({ status: 'error', error: 'Invalid challenge key' })
+  // Sanitize the key to only allow safe characters
+  const safeKey = key.replace(/[^a-zA-Z0-9-_]/g, '')
+  const baseDir = path.resolve('data/static/codefixes')
+  const infoPath = path.resolve(baseDir, safeKey + '.info.yml')
+  
+  // Ensure the resolved path is within the intended directory
+  if (!infoPath.startsWith(baseDir)) {
+    res.status(403).json({ status: 'error', error: 'Invalid path' })
     return
   }
-  if (fs.existsSync(normalizedPath)) {
-    const codingChallengeInfos = yaml.load(fs.readFileSync(normalizedPath, 'utf8'))
+
+  if (fs.existsSync(infoPath)) {
+    const codingChallengeInfos = yaml.load(fs.readFileSync(infoPath, 'utf8'))
     if (codingChallengeInfos?.hints) {
       if (accuracy.getFindItAttempts(key) > codingChallengeInfos.hints.length) {
         if (vulnLines.length === 1) {
