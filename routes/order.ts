@@ -151,10 +151,11 @@ module.exports = function placeOrder () {
             })
           }
 
-          db.ordersCollection.insert({
+          // Sanitize and validate order details
+          const orderData = {
             promotionalAmount: discountAmount,
-            paymentId: req.body.orderDetails ? req.body.orderDetails.paymentId : null,
-            addressId: req.body.orderDetails ? req.body.orderDetails.addressId : null,
+            paymentId: req.body.orderDetails?.paymentId ? String(req.body.orderDetails.paymentId) : null,
+            addressId: req.body.orderDetails?.addressId ? String(req.body.orderDetails.addressId) : null,
             orderId,
             delivered: false,
             email: (email ? email.replace(/[aeiou]/gi, '*') : undefined),
@@ -163,7 +164,10 @@ module.exports = function placeOrder () {
             bonus: totalPoints,
             deliveryPrice: deliveryAmount,
             eta: deliveryMethod.eta.toString()
-          }).then(() => {
+          }
+
+          // Use sanitized object for database insertion
+          db.ordersCollection.insert(orderData).then(() => {
             doc.end()
           })
         } else {
