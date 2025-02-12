@@ -3,14 +3,13 @@
  * SPDX-License-Identifier: MIT
  */
 
-import utils = require('../lib/utils')
-import challengeUtils = require('../lib/challengeUtils')
-import { type Request, type Response, type NextFunction } from 'express'
+import { Request, Response, NextFunction } from 'express'
 import { challenges } from '../data/datacache'
+import * as utils from '../lib/utils'
+import * as challengeUtils from '../lib/challengeUtils'
+import * as security from '../lib/insecurity'
 
-const security = require('../lib/insecurity')
-
-module.exports = function performRedirect () {
+export = function performRedirect () {
   return ({ query }: Request, res: Response, next: NextFunction) => {
     const toUrl: string = query.to as string
     if (!toUrl) {
@@ -20,7 +19,7 @@ module.exports = function performRedirect () {
     
     // Only allow exact matches from the allowlist
     const allowlist = security.redirectAllowlist
-    if (allowlist.includes(toUrl)) {
+    if (Array.from(allowlist).includes(toUrl)) {
       // Keep the crypto challenge functionality
       challengeUtils.solveIf(challenges.redirectCryptoCurrencyChallenge, () => { 
         return toUrl === 'https://explorer.dash.org/address/Xr556RzuwX6hg5EGpkybbv5RanJoZN17kW' || 
