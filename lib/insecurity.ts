@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-import fs from 'fs'
+// Required for process.env
+import 'dotenv/config'
 import crypto from 'crypto'
 import { type Request, type Response, type NextFunction } from 'express'
 import { type UserModel } from 'models/user'
