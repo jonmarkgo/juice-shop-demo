@@ -16,6 +16,15 @@ module.exports = function profileImageUrlUpload () {
   return (req: Request, res: Response, next: NextFunction) => {
     if (req.body.imageUrl !== undefined) {
       const url = req.body.imageUrl
+      // Validate URL scheme and structure
+      if (!utils.isUrl(url)) {
+        return next(new Error('Invalid image URL: URL must start with http:// or https://'))
+      }
+      // Validate file extension
+      const ext = url.split('.').slice(-1)[0].toLowerCase()
+      if (!['jpg', 'jpeg', 'png', 'svg', 'gif'].includes(ext)) {
+        return next(new Error('Invalid image URL: File must be a valid image type (jpg, jpeg, png, svg, gif)'))
+      }
       if (url.match(/(.)*solve\/challenges\/server-side(.)*/) !== null) req.app.locals.abused_ssrf_bug = true
       const loggedInUser = security.authenticatedUsers.get(req.cookies.token)
       if (loggedInUser) {
