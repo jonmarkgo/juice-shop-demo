@@ -15,14 +15,22 @@ const security = require('../lib/insecurity')
 module.exports = function productReviews () {
   return (req: Request, res: Response) => {
     const user = security.authenticatedUsers.from(req)
+    if (!user) {
+      res.status(401).json({ status: 'error', message: 'Unauthenticated user' })
+      return
+    }
+    
     challengeUtils.solveIf(challenges.forgedReviewChallenge, () => { return user && user.data.email !== req.body.author })
-    reviewsCollection.insert({
-      product: req.params.id,
-      message: req.body.message,
-      author: req.body.author,
+    
+    const sanitizedReview = {
+      product: security.sanitizeHtml(req.params.id),
+      message: security.sanitizeHtml(req.body.message),
+      author: user.data.email, // Ensure author is the authenticated user
       likesCount: 0,
       likedBy: []
-    }).then(() => {
+    }
+    
+    reviewsCollection.insert(sanitizedReview).then(() => {
       res.status(201).json({ status: 'success' })
     }, (err: unknown) => {
       res.status(500).json(utils.getErrorMessage(err))
