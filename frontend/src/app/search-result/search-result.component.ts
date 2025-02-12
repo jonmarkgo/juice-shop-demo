@@ -12,7 +12,7 @@ import { MatPaginator } from '@angular/material/paginator'
 import { forkJoin, type Subscription } from 'rxjs'
 import { MatTableDataSource } from '@angular/material/table'
 import { MatDialog } from '@angular/material/dialog'
-import { DomSanitizer, type SafeHtml } from '@angular/platform-browser'
+import { DomSanitizer, type SafeHtml, SecurityContext } from '@angular/platform-browser'
 import { TranslateService } from '@ngx-translate/core'
 import { SocketIoService } from '../Services/socket-io.service'
 import { SnackBarHelperService } from '../Services/snack-bar-helper.service'
@@ -120,11 +120,12 @@ export class SearchResultComponent implements OnDestroy, AfterViewInit {
     }, (err) => { console.log(err) })
   }
 
-  trustProductDescription (tableData: any[]) { // vuln-code-snippet neutral-line restfulXssChallenge
-    for (let i = 0; i < tableData.length; i++) { // vuln-code-snippet neutral-line restfulXssChallenge
-      tableData[i].description = this.sanitizer.bypassSecurityTrustHtml(tableData[i].description) // vuln-code-snippet vuln-line restfulXssChallenge
-    } // vuln-code-snippet neutral-line restfulXssChallenge
-  } // vuln-code-snippet neutral-line restfulXssChallenge
+  trustProductDescription (tableData: any[]) {
+    for (let i = 0; i < tableData.length; i++) {
+      // Use DomSanitizer to sanitize HTML content instead of bypassing security
+      tableData[i].description = this.sanitizer.sanitize(SecurityContext.HTML, tableData[i].description)
+    }
+  }
   // vuln-code-snippet end restfulXssChallenge
 
   ngOnDestroy () {
@@ -148,7 +149,7 @@ export class SearchResultComponent implements OnDestroy, AfterViewInit {
         this.io.socket().emit('verifyLocalXssChallenge', queryParam)
       }) // vuln-code-snippet hide-end
       this.dataSource.filter = queryParam.toLowerCase()
-      this.searchValue = this.sanitizer.bypassSecurityTrustHtml(queryParam) // vuln-code-snippet vuln-line localXssChallenge xssBonusChallenge
+      this.searchValue = this.sanitizer.sanitize(SecurityContext.HTML, queryParam)
       this.gridDataSource.subscribe((result: any) => {
         if (result.length === 0) {
           this.emptyState = true
