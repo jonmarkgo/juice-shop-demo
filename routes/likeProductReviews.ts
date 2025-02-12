@@ -3,25 +3,33 @@
  * SPDX-License-Identifier: MIT
  */
 
-import challengeUtils = require('../lib/challengeUtils')
 import { type Request, type Response, type NextFunction } from 'express'
 import { type Review } from '../data/types'
 import * as db from '../data/mongodb'
 import { challenges } from '../data/datacache'
-
-const security = require('../lib/insecurity')
+import { ObjectId } from 'mongodb'
+import challengeUtils = require('../lib/challengeUtils')
+import security = require('../lib/insecurity')
 
 module.exports = function productReviews () {
   return (req: Request, res: Response, next: NextFunction) => {
-    const id = req.body.id
+    let id: ObjectId
+    try {
+      id = new ObjectId(req.body.id)
+    } catch (e) {
+      return res.status(400).json({ error: 'Invalid review ID format' })
+    }
     const user = security.authenticatedUsers.from(req)
+    if (!user) {
+      return res.status(401).json({ error: 'User not authenticated' })
+    }
     db.reviewsCollection.findOne({ _id: id }).then((review: Review) => {
       if (!review) {
         res.status(404).json({ error: 'Not found' })
       } else {
-        const likedBy = review.likedBy
+        const likedBy = review.likedBy || []
         if (!likedBy.includes(user.data.email)) {
-          db.reviewsCollection.update(
+          db.reviewsCollection.updateOne(
             { _id: id },
             { $inc: { likesCount: 1 } }
           ).then(
@@ -38,9 +46,9 @@ module.exports = function productReviews () {
                     }
                   }
                   challengeUtils.solveIf(challenges.timingAttackChallenge, () => { return count > 2 })
-                  db.reviewsCollection.update(
+                  db.reviewsCollection.updateOne(
                     { _id: id },
-                    { $set: { likedBy } }
+                    { $set: { likedBy: likedBy } }
                   ).then(
                     (result: any) => {
                       res.json(result)
