@@ -151,10 +151,17 @@ module.exports = function placeOrder () {
             })
           }
 
-          db.ordersCollection.insert({
+          // Validate and sanitize order details
+          const sanitizedOrderDetails = {
+            paymentId: req.body.orderDetails?.paymentId ? String(req.body.orderDetails.paymentId).replace(/[^a-zA-Z0-9-_]/g, '') : null,
+            addressId: req.body.orderDetails?.addressId ? parseInt(String(req.body.orderDetails.addressId), 10) || null : null
+          }
+
+          // Create order document with validated data
+          const orderDocument = {
             promotionalAmount: discountAmount,
-            paymentId: req.body.orderDetails ? req.body.orderDetails.paymentId : null,
-            addressId: req.body.orderDetails ? req.body.orderDetails.addressId : null,
+            paymentId: sanitizedOrderDetails.paymentId,
+            addressId: sanitizedOrderDetails.addressId,
             orderId,
             delivered: false,
             email: (email ? email.replace(/[aeiou]/gi, '*') : undefined),
@@ -163,7 +170,9 @@ module.exports = function placeOrder () {
             bonus: totalPoints,
             deliveryPrice: deliveryAmount,
             eta: deliveryMethod.eta.toString()
-          }).then(() => {
+          }
+
+          db.ordersCollection.insert(orderDocument).then(() => {
             doc.end()
           })
         } else {
