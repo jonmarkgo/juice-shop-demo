@@ -28,7 +28,6 @@ module.exports = function productReviews () {
         return res.status(401).json({ error: 'User not authenticated' })
       }
       db.reviewsCollection.findOne({ _id: id }).then((review: Review) => {
->>>>>>> origin/devin/AZT3QMU_eLoHhRmlqkWl-fix-vulnerability
       if (!review) {
         res.status(404).json({ error: 'Not found' })
       } else {
@@ -36,7 +35,6 @@ module.exports = function productReviews () {
         if (!likedBy.includes(user.data.email)) {
           db.reviewsCollection.updateOne(
             { _id: id },
->>>>>>> origin/devin/AZT3QMU_eLoHhRmlqkWl-fix-vulnerability
             { $inc: { likesCount: 1 } }
           ).then(
             () => {
@@ -55,7 +53,6 @@ module.exports = function productReviews () {
                   db.reviewsCollection.updateOne(
                     { _id: id },
                     { $set: { likedBy: likedBy } }
->>>>>>> origin/devin/AZT3QMU_eLoHhRmlqkWl-fix-vulnerability
                   ).then(
                     (result: any) => {
                       res.json(result)
