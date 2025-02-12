@@ -17,7 +17,7 @@ module.exports = function productReviews () {
     if (typeof id !== 'string' || !id.trim()) {
       return res.status(400).json({ error: 'Invalid review ID format' })
     }
-    const sanitizedId = id.trim()
+    const sanitizedId = id.trim().toString()
     const user = security.authenticatedUsers.from(req)
     db.reviewsCollection.findOne(
       { _id: sanitizedId },
@@ -41,7 +41,7 @@ module.exports = function productReviews () {
                   { projection: { likedBy: 1, _id: 1 } }
                 ).then((review: Review) => {
                   const likedBy = review.likedBy
-                  likedBy.push(user.data.email)
+                  likedBy.push(user.data.email.toString())
                   let count = 0
                   for (let i = 0; i < likedBy.length; i++) {
                     if (likedBy[i] === user.data.email) {
@@ -51,7 +51,7 @@ module.exports = function productReviews () {
                   challengeUtils.solveIf(challenges.timingAttackChallenge, () => { return count > 2 })
                   db.reviewsCollection.update(
                     { _id: sanitizedId },
-                    { $set: { likedBy } },
+                    { $set: { likedBy: likedBy.map(email => email.toString()) } },
                     { runValidators: true }
                   ).then(
                     (result: any) => {
