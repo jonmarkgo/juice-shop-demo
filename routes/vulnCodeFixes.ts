@@ -4,6 +4,18 @@ import * as accuracy from '../lib/accuracy'
 const challengeUtils = require('../lib/challengeUtils')
 const fs = require('fs')
 const yaml = require('js-yaml')
+const path = require('path')
+
+function isValidKey(key: string): boolean {
+  return typeof key === 'string' && /^[a-zA-Z0-9-_]+$/.test(key)
+}
+
+function getSafePath(basePath: string, key: string, extension?: string): string {
+  const safePath = path.join(basePath, `${key}${extension ?? ''}`)
+  const resolvedPath = path.resolve(safePath)
+  const resolvedBase = path.resolve(basePath)
+  return resolvedPath.startsWith(resolvedBase) ? safePath : ''
+}
 
 const FixesDir = 'data/static/codefixes'
 
@@ -20,12 +32,18 @@ export const readFixes = (key: string) => {
   if (CodeFixes[key]) {
     return CodeFixes[key]
   }
+  if (!isValidKey(key)) {
+    return { fixes: [], correct: -1 }
+  }
+  
   const files = fs.readdirSync(FixesDir)
   const fixes: string[] = []
   let correct: number = -1
   for (const file of files) {
     if (file.startsWith(`${key}_`)) {
-      const fix = fs.readFileSync(`${FixesDir}/${file}`).toString()
+      const filePath = getSafePath(FixesDir, file)
+      if (!filePath) continue
+      const fix = fs.readFileSync(filePath).toString()
       const metadata = file.split('_')
       const number = metadata[1]
       fixes.push(fix)
@@ -76,8 +94,9 @@ export const checkCorrectFix = () => async (req: Request<Record<string, unknown>
     })
   } else {
     let explanation
-    if (fs.existsSync('./data/static/codefixes/' + key + '.info.yml')) {
-      const codingChallengeInfos = yaml.load(fs.readFileSync('./data/static/codefixes/' + key + '.info.yml', 'utf8'))
+    const infoPath = getSafePath('./data/static/codefixes', key, '.info.yml')
+    if (infoPath && fs.existsSync(infoPath)) {
+      const codingChallengeInfos = yaml.load(fs.readFileSync(infoPath, 'utf8'))
       const selectedFixInfo = codingChallengeInfos?.fixes.find(({ id }: { id: number }) => id === selectedFix + 1)
       if (selectedFixInfo?.explanation) explanation = res.__(selectedFixInfo.explanation)
     }
